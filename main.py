@@ -45,5 +45,8 @@ def main():
     total = treasury + total_wallet + total_market
     print(f"総資産: {total}")
 
+    input("Enterキーで終了します")
+
+
 if __name__ == "__main__":
     main()
