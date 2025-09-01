@@ -4,7 +4,6 @@ from calculator import SettlementBalanceCalculator
 
 def main():
     api = BitCraftAPIClient()
-    calc = SettlementBalanceCalculator(api)
     town_name = input("町名を入力してください: ")
     towns = api.search_town(town_name)
     if not towns:
