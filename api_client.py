@@ -22,7 +22,6 @@ class BitCraftAPIClient:
         resp = requests.get(f"{BASE_URL}/players/{player_id}/inventories")
         resp.raise_for_status()
         data = resp.json()
-        # inventoriesがリストか、辞書の"inventories"キーか両方対応
         if isinstance(data, dict):
             inventories = data.get("inventories", [])
         else:
