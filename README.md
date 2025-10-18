@@ -1,56 +1,58 @@
 # BitCraft_Total_Settlement_Balance_Calculator
 
-BitCraft Onlineの町総資産計算ツール（TSBC）
-町の所持金・メンバーのWallet・マーケット資産を合算し、総資産を算出します。
+BitCraft Online の町総資産計算ツール（TSBC）です。
+町の所持金（treasury）・メンバーの Wallet・マーケット資産を合算して "総資産" を算出します。
 
 ## 概要
 
-- 町名で検索し、候補から町を選択
-- APIから町の詳細・メンバー情報・各メンバーのWallet/Market資産を取得
-- すべての金額を合算し、総資産を表示
+- 町名で検索して候補を表示
+- 候補から町を選択
+- 選択した町の詳細・メンバー情報・各メンバーの Wallet / Market を取得
+- 合算して総資産を表示
 
-## ダウンロード・実行方法(exe版)
+## ダウンロード・実行方法（exe版）
 
-1. [main.exe](./main.exe) をダウンロード
-2. ダブルクリックで実行
-3. コマンドプロンプトが開くので、画面の指示に従って操作してください
+1. `main.exe` をダウンロード
+1. ダブルクリックで実行
+1. コマンドプロンプトが開くので画面の指示に従って操作してください
 
-## 使い方(cli版)
+> 注意: EXE は Windows 向けです。Python が不要でそのまま実行できます。
 
-1. 必要なPythonパッケージをインストール
-   ```
-   pip install requests
-   ```
-2. CLIで実行
-   ```
-   python main.py
-   ```
-3. 町名を入力
-   ```
-   町名を入力してください: musashi
-   ```
-4. 候補から町を選択
-   ```
-   0: Musashi T7 (ID: 576460752386460204)
-   番号で町を選択してください: 0
-   ```
-5. 総資産が表示されます
-6. **実行完了後は「Enterキーで終了します」と表示されるので、Enterキーを押してウィンドウを閉じてください。**
+## 使い方（CLI版）
+
+1. 必要なパッケージをインストール
+
+```bash
+pip install requests
+```
+
+1. CLIで実行
+
+```bash
+python main.py
+```
+
+1. 町名を入力して候補から選択します
+
+```text
+町名を入力してください: musashi
+```
+
+```text
+0: Musashi T7 (ID: 576460752386460204)
+番号で町を選択してください: 0
+```
+
+1. 実行完了後は下部に「Enterキーで終了します」と表示されるので、Enterキーを押してウィンドウを閉じてください。
 
 ## 処理フロー
 
-1. 町名でAPI検索
-   `GET /api/claims?q={町名}`
-2. 町候補リスト表示・選択
-3. 選択した町の詳細取得
-   `GET /api/claims/{entityId}`
-4. メンバー一覧取得
-   `GET /api/claims/{entityId}/members`
-5. 各メンバーのWallet取得
-   `GET /api/players/{playerId}/inventories`
-6. 各メンバーのMarket資産取得
-   `GET /api/market/player/{playerId}`
-7. treasury + 全メンバーWallet + 全メンバーMarket を合算
+1. 町名で検索: `GET /api/claims?q={町名}`
+2. 町詳細: `GET /api/claims/{entityId}`
+3. メンバー一覧: `GET /api/claims/{entityId}/members`
+4. 各メンバーの Wallet: `GET /api/players/{playerId}/inventories` (`inventoryName == "Wallet"` を探し、`pockets[0]["contents"]["quantity"]` を使用)
+5. 各プレイヤーの Market: `GET /api/market/player/{playerId}` (`sellOrders` と `buyOrders` の `storedCoins` を合算)
+6. 最終的に `treasury + Σ(wallet) + Σ(market)` を表示
 
 ## API仕様（抜粋）
 
@@ -62,12 +64,25 @@ BitCraft Onlineの町総資産計算ツール（TSBC）
 - Market: `/api/market/player/{playerId}`
   - `sellOrders`/`buyOrders` の `"storedCoins"` 合計
 
+## クライアント識別ヘッダー
+
+このクライアントでは API へアクセスする際にアプリを識別するための HTTP ヘッダーを送信します。
+
+- `User-Agent`: 例 `BitJita (BitCraft_TSBC)`
+- `x-app-identifier`: デフォルト `BitCraft_TSBC`
+
+アプリ識別子を変更したい場合は、`api_client.BitCraftAPIClient` のコンストラクタに文字列を渡してください。
+
+```py
+from api_client import BitCraftAPIClient
+api = BitCraftAPIClient(app_identifier="YourName_YourApp")
+```
+
 ## ライセンス
 
 MIT License
-Copyright (c) 2025 HU_JA_JA
 
 ---
 
-ご要望・バグ報告は [Issues](https://github.com/your-repo/issues) へどうぞ。
+ご要望・バグ報告は Issues へお願いします。
 

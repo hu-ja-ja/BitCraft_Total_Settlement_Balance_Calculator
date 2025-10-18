@@ -2,24 +2,33 @@ import requests
 
 BASE_URL = "https://bitjita.com/api"
 
+
 class BitCraftAPIClient:
+    def __init__(self, app_identifier: str = "BitCraft_TSBC"):
+        self.session = requests.Session()
+        ua = f"BitJita ({app_identifier})"
+        self.session.headers.update({
+            "User-Agent": ua,
+            "x-app-identifier": app_identifier,
+        })
+
     def search_town(self, town_name: str) -> list:
-        resp = requests.get(f"{BASE_URL}/claims", params={"q": town_name})
+        resp = self.session.get(f"{BASE_URL}/claims", params={"q": town_name})
         resp.raise_for_status()
         return resp.json().get("claims", [])
 
     def get_town_detail(self, entity_id: str) -> dict:
-        resp = requests.get(f"{BASE_URL}/claims/{entity_id}")
+        resp = self.session.get(f"{BASE_URL}/claims/{entity_id}")
         resp.raise_for_status()
         return resp.json().get("claim", {})
 
     def get_town_members(self, entity_id: str) -> list:
-        resp = requests.get(f"{BASE_URL}/claims/{entity_id}/members")
+        resp = self.session.get(f"{BASE_URL}/claims/{entity_id}/members")
         resp.raise_for_status()
         return resp.json().get("members", [])
 
     def get_player_wallet(self, player_id: str) -> int:
-        resp = requests.get(f"{BASE_URL}/players/{player_id}/inventories")
+        resp = self.session.get(f"{BASE_URL}/players/{player_id}/inventories")
         resp.raise_for_status()
         data = resp.json()
         if isinstance(data, dict):
@@ -34,7 +43,7 @@ class BitCraftAPIClient:
         return 0
 
     def get_player_market_coins(self, player_id: str) -> int:
-        resp = requests.get(f"{BASE_URL}/market/player/{player_id}")
+        resp = self.session.get(f"{BASE_URL}/market/player/{player_id}")
         resp.raise_for_status()
         data = resp.json()
         total = 0
