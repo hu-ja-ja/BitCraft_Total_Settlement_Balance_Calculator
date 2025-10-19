@@ -1,5 +1,4 @@
 from api_client import BitCraftAPIClient
-from calculator import SettlementBalanceCalculator
 
 
 def main():
