@@ -4,9 +4,9 @@ BASE_URL = "https://bitjita.com/api"
 
 
 class BitCraftAPIClient:
-    def __init__(self, app_identifier: str = "BitCraft_TSBC"):
+    def __init__(self, app_identifier: str = "BitCraft_TSBC (discord: hu_ja_ja_)"):
         self.session = requests.Session()
-        ua = f"BitJita ({app_identifier})"
+        ua = f"({app_identifier})"
         self.session.headers.update({
             "User-Agent": ua,
             "x-app-identifier": app_identifier,
