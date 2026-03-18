@@ -1,0 +1,39 @@
+name: release-go
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        shell: pwsh
+        run: |
+          ./scripts/build-go.ps1 -Version "${{ github.event.release.tag_name }}" -SkipTest
+
+      - name: Create checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist/bitcraft-tsbc-windows-amd64.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path dist/bitcraft-tsbc-windows-amd64.exe.sha256 -Value "$hash  bitcraft-tsbc-windows-amd64.exe"
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/bitcraft-tsbc-windows-amd64.exe
+            dist/bitcraft-tsbc-windows-amd64.exe.sha256
