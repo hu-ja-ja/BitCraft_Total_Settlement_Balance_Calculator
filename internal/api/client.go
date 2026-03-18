@@ -9,11 +9,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 const (
 	defaultBaseURL = "https://bitjita.com/api"
+	defaultMaxRequestsPerMinute = 250
 )
 
 type Candidate struct {
@@ -41,9 +43,11 @@ type EmpireDetail struct {
 }
 
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
-	headers    http.Header
+	baseURL        string
+	httpClient     *http.Client
+	headers        http.Header
+	rateMu         sync.Mutex
+	recentRequests []time.Time
 }
 
 func New(appIdentifier string) *Client {
@@ -301,6 +305,10 @@ func (c *Client) getJSON(ctx context.Context, path string, params map[string]str
 		}
 	}
 
+	if err := c.waitForRateLimit(ctx); err != nil {
+		return err
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -327,6 +335,49 @@ func (c *Client) getJSON(ctx context.Context, path string, params map[string]str
 	}
 
 	return nil
+}
+
+func (c *Client) waitForRateLimit(ctx context.Context) error {
+	for {
+		now := time.Now()
+		cutoff := now.Add(-time.Minute)
+
+		c.rateMu.Lock()
+		kept := c.recentRequests[:0]
+		for _, ts := range c.recentRequests {
+			if ts.After(cutoff) {
+				kept = append(kept, ts)
+			}
+		}
+		c.recentRequests = kept
+
+		if len(c.recentRequests) < defaultMaxRequestsPerMinute {
+			c.recentRequests = append(c.recentRequests, now)
+			c.rateMu.Unlock()
+			return nil
+		}
+
+		nextAllowedAt := c.recentRequests[0].Add(time.Minute)
+		c.rateMu.Unlock()
+
+		wait := time.Until(nextAllowedAt)
+		if wait <= 0 {
+			continue
+		}
+
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
 }
 
 func anySliceToMapSlice(raw []any) []map[string]any {
